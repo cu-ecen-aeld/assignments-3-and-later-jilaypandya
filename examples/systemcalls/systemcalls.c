@@ -1,4 +1,9 @@
 #include "systemcalls.h"
+#include "stdlib.h"
+#include "unistd.h"
+#include "sys/types.h"
+#include "sys/file.h"
+#include "string.h"
 
 /**
  * @param cmd the command to execute with system()
@@ -16,8 +21,9 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+    int err = system(cmd);
 
-    return true;
+    return err==0?true:false;
 }
 
 /**
@@ -58,10 +64,13 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    fork();
+    int err = 0;
+    err = execv(command[0], command+1);
 
     va_end(args);
 
-    return true;
+    return err==0?true:false;
 }
 
 /**
@@ -92,8 +101,21 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+    int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+    int err = 0;
+
+    if (fd < 0) { 
+        perror("open"); 
+        abort(); 
+    }else{
+        dup2(fd, STDOUT_FILENO);
+        err = execv(command[0], command+1);
+        close(fd);
+    }
+    fork();
+
 
     va_end(args);
 
-    return true;
+    return err==0?true:false;
 }
